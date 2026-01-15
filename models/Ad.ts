@@ -6,6 +6,8 @@ export interface IAd extends Document {
     type: 'image' | 'video';
     enabled: boolean;
     order: number;
+    muted: boolean;
+    duration: number; // Duration in seconds
     createdAt: Date;
     updatedAt: Date;
 }
@@ -17,6 +19,8 @@ const AdSchema: Schema = new Schema(
         type: { type: String, enum: ['image', 'video'], required: true },
         enabled: { type: Boolean, default: true },
         order: { type: Number, default: 0 },
+        muted: { type: Boolean, default: true },
+        duration: { type: Number, default: 10 }, // Default 10 seconds
     },
     { timestamps: true }
 );

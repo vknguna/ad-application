@@ -21,11 +21,18 @@ export default function AdForm({ initialData, onSubmit, onCancel }: AdFormProps)
         type: 'image',
         enabled: true,
         order: 0,
+        muted: true,
+        duration: 10,
     });
 
     useEffect(() => {
         if (initialData) {
-            setFormData(initialData);
+            setFormData({
+                ...initialData,
+                type: initialData.type || 'image', // Fallback to image if missing
+                muted: initialData.muted !== undefined ? initialData.muted : true,
+                duration: initialData.duration || 10,
+            });
         }
     }, [initialData]);
 
@@ -51,19 +58,34 @@ export default function AdForm({ initialData, onSubmit, onCancel }: AdFormProps)
             </div>
 
             <div className="grid gap-2">
-                <Label>Google Drive Link (URL)</Label>
+                <Label>Media Link (URL)</Label>
                 <Input
                     value={formData.url}
                     onChange={(e) => handleChange('url', e.target.value)}
                     required
-                    placeholder="https://drive.google.com/..."
                 />
             </div>
+
+            {formData.type === 'image' && (
+                <div className="grid gap-2">
+                    <Label>Duration (Seconds)</Label>
+                    <Input
+                        type="number"
+                        value={formData.duration?.toString() || ''}
+                        onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            handleChange('duration', isNaN(val) ? 10 : val);
+                        }}
+                        required
+                        placeholder="10"
+                    />
+                </div>
+            )}
 
             <div className="grid gap-2">
                 <Label>Type</Label>
                 <Select
-                    value={formData.type}
+                    value={formData.type || 'image'}
                     onValueChange={(v) => handleChange('type', v)}
                 >
                     <SelectTrigger>
@@ -76,12 +98,27 @@ export default function AdForm({ initialData, onSubmit, onCancel }: AdFormProps)
                 </Select>
             </div>
 
+            {
+                formData.type === 'video' && (
+                    <div className="flex items-center space-x-2 pt-2">
+                        <Switch
+                            checked={formData.muted ?? true}
+                            onCheckedChange={(c) => handleChange('muted', c)}
+                        />
+                        <Label>Mute Video</Label>
+                    </div>
+                )
+            }
+
             <div className="grid gap-2">
                 <Label>Order (Sort Priority)</Label>
                 <Input
                     type="number"
-                    value={formData.order}
-                    onChange={(e) => handleChange('order', parseInt(e.target.value))}
+                    value={formData.order?.toString() || ''}
+                    onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        handleChange('order', isNaN(val) ? 0 : val);
+                    }}
                     required
                 />
             </div>
@@ -100,6 +137,6 @@ export default function AdForm({ initialData, onSubmit, onCancel }: AdFormProps)
                 </Button>
                 <Button type="submit">Save Ad</Button>
             </div>
-        </form>
+        </form >
     );
 }

@@ -194,17 +194,17 @@ export default function AdminDashboard() {
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen bg-background text-foreground transition-colors duration-300">
-            <div className="flex justify-between items-center mb-8">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen bg-background text-foreground transition-colors duration-300">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Digital Signage Admin</h1>
                     <p className="text-muted-foreground mt-1">Manage displayed ads and ticker messages.</p>
                 </div>
-                <div className="space-x-4 flex items-center">
-                    <Button onClick={() => router.push('/display')} variant="secondary">
-                        <Monitor className="mr-2 h-4 w-4" /> Go to Display
+                <div className="flex w-full md:w-auto gap-2">
+                    <Button onClick={() => router.push('/display')} variant="secondary" className="flex-1 md:flex-none">
+                        <Monitor className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Go to </span>Display
                     </Button>
-                    <Button onClick={handleLogout} variant="ghost" className="text-muted-foreground hover:text-destructive">Sign Out</Button>
+                    <Button onClick={handleLogout} variant="ghost" className="text-muted-foreground hover:text-destructive flex-1 md:flex-none">Sign Out</Button>
                 </div>
             </div>
 
@@ -221,7 +221,7 @@ export default function AdminDashboard() {
                             <h2 className="font-semibold text-lg">Active Advertisements</h2>
                             <Dialog open={isAdDialogOpen} onOpenChange={setIsAdDialogOpen}>
                                 <DialogTrigger asChild>
-                                    <Button onClick={openCreateAd}><Plus className="mr-2 h-4 w-4" /> Add Ad</Button>
+                                    <Button onClick={openCreateAd}><Plus className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Add Ad</span></Button>
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-lg">
                                     <DialogHeader>
@@ -236,7 +236,8 @@ export default function AdminDashboard() {
                             </Dialog>
                         </div>
 
-                        <div className="grid grid-cols-12 gap-4 p-4 border-b bg-muted/50 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        {/* Desktop Header */}
+                        <div className="hidden md:grid grid-cols-12 gap-4 p-4 border-b bg-muted/50 text-xs font-bold uppercase tracking-wider text-muted-foreground">
                             <div className="col-span-1 text-center">Order</div>
                             <div className="col-span-1 text-center">Type</div>
                             <div className="col-span-6">Title & URL</div>
@@ -251,23 +252,44 @@ export default function AdminDashboard() {
                                 </div>
                             ) : (
                                 ads.map((ad) => (
-                                    <div key={ad._id as unknown as string} className={`grid grid-cols-12 gap-4 p-4 items-center hover:bg-muted/30 transition-colors ${!ad.enabled ? 'opacity-50 grayscale' : ''}`}>
-                                        <div className="col-span-1 text-center font-mono font-bold text-lg text-muted-foreground">
+                                    <div key={ad._id as unknown as string} className={`group flex flex-col md:grid md:grid-cols-12 gap-4 p-4 items-start md:items-center hover:bg-muted/30 transition-colors ${!ad.enabled ? 'opacity-50 grayscale' : ''}`}>
+
+                                        {/* Mobile: Header Row */}
+                                        <div className="flex md:hidden w-full justify-between items-center mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-mono font-bold text-muted-foreground">#{ad.order}</span>
+                                                {ad.type === 'video' ? <FileVideo className="h-4 w-4" /> : <FileImage className="h-4 w-4" />}
+                                            </div>
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${ad.enabled ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800'}`}>
+                                                {ad.enabled ? 'Enabled' : 'Disabled'}
+                                            </span>
+                                        </div>
+
+                                        {/* Desktop Columns */}
+                                        <div className="hidden md:block col-span-1 text-center font-mono font-bold text-lg text-muted-foreground">
                                             {ad.order}
                                         </div>
-                                        <div className="col-span-1 flex justify-center text-muted-foreground">
+                                        <div className="hidden md:flex col-span-1 justify-center text-muted-foreground">
                                             {ad.type === 'video' ? <FileVideo className="h-5 w-5" /> : <FileImage className="h-5 w-5" />}
                                         </div>
-                                        <div className="col-span-6 overflow-hidden">
+
+                                        {/* Content */}
+                                        <div className="col-span-12 md:col-span-6 w-full overflow-hidden">
                                             <div className="font-semibold text-base truncate">{ad.title}</div>
                                             <div className="text-xs text-muted-foreground truncate font-mono">{ad.url}</div>
+                                            {/* Mobile Actions in Content */}
+                                            <div className="flex md:hidden mt-3 gap-2">
+                                                <Button size="sm" variant="outline" onClick={() => openEditAd(ad)} className="flex-1 h-8">Edit</Button>
+                                                <Button size="sm" variant="ghost" onClick={() => setDeletingAdId(ad._id as unknown as string)} className="h-8 text-destructive">Delete</Button>
+                                            </div>
                                         </div>
-                                        <div className="col-span-2 text-center">
+
+                                        <div className="hidden md:block col-span-2 text-center">
                                             <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${ad.enabled ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800'}`}>
                                                 {ad.enabled ? 'Enabled' : 'Disabled'}
                                             </span>
                                         </div>
-                                        <div className="col-span-2 flex justify-end space-x-2">
+                                        <div className="hidden md:flex col-span-2 justify-end space-x-2">
                                             <Button variant="ghost" size="icon" onClick={() => openEditAd(ad)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                                                 <Edit className="h-4 w-4" />
                                             </Button>
@@ -289,7 +311,7 @@ export default function AdminDashboard() {
                             <h2 className="font-semibold text-lg">Ticker Messages</h2>
                             <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
                                 <DialogTrigger asChild>
-                                    <Button onClick={openCreateMessage}><Plus className="mr-2 h-4 w-4" /> Add Message</Button>
+                                    <Button onClick={openCreateMessage}><Plus className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Add Message</span></Button>
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-lg">
                                     <DialogHeader>
@@ -304,7 +326,8 @@ export default function AdminDashboard() {
                             </Dialog>
                         </div>
 
-                        <div className="grid grid-cols-12 gap-4 p-4 border-b bg-muted/50 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        {/* Desktop Header */}
+                        <div className="hidden md:grid grid-cols-12 gap-4 p-4 border-b bg-muted/50 text-xs font-bold uppercase tracking-wider text-muted-foreground">
                             <div className="col-span-2">Name</div>
                             <div className="col-span-6">Message Content</div>
                             <div className="col-span-2 text-center">Status</div>
@@ -318,20 +341,42 @@ export default function AdminDashboard() {
                                 </div>
                             ) : (
                                 messages.map((msg) => (
-                                    <div key={msg._id as unknown as string} className={`grid grid-cols-12 gap-4 p-4 items-center hover:bg-muted/30 transition-colors ${!msg.enabled ? 'opacity-50 grayscale' : ''}`}>
-                                        <div className="col-span-2 font-semibold flex items-center gap-2">
+                                    <div key={msg._id as unknown as string} className={`flex flex-col md:grid md:grid-cols-12 gap-2 md:gap-4 p-4 items-start md:items-center hover:bg-muted/30 transition-colors ${!msg.enabled ? 'opacity-50 grayscale' : ''}`}>
+
+                                        {/* Mobile Header */}
+                                        <div className="flex md:hidden w-full justify-between items-center">
+                                            <div className="font-semibold flex items-center gap-2">
+                                                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                                                {msg.name}
+                                            </div>
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${msg.enabled ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800'}`}>
+                                                {msg.enabled ? 'Enabled' : 'Disabled'}
+                                            </span>
+                                        </div>
+
+                                        {/* Desktop Columns */}
+                                        <div className="hidden md:flex col-span-2 font-semibold items-center gap-2">
                                             <MessageSquare className="h-4 w-4 text-muted-foreground" />
                                             {msg.name}
                                         </div>
-                                        <div className="col-span-6">
-                                            <div className="text-sm text-foreground line-clamp-2">{msg.text}</div>
+
+                                        <div className="col-span-12 md:col-span-6 w-full">
+                                            <div className="text-sm text-foreground line-clamp-3 md:line-clamp-2 my-2 md:my-0 bg-muted/10 md:bg-transparent p-2 md:p-0 rounded-md">
+                                                {msg.text}
+                                            </div>
+                                            {/* Mobile Actions */}
+                                            <div className="flex md:hidden gap-2">
+                                                <Button size="sm" variant="outline" onClick={() => openEditMessage(msg)} className="flex-1 h-8">Edit</Button>
+                                                <Button size="sm" variant="ghost" onClick={() => setDeletingMessageId(msg._id as unknown as string)} className="h-8 text-destructive">Delete</Button>
+                                            </div>
                                         </div>
-                                        <div className="col-span-2 text-center">
+
+                                        <div className="hidden md:block col-span-2 text-center">
                                             <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${msg.enabled ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800'}`}>
                                                 {msg.enabled ? 'Enabled' : 'Disabled'}
                                             </span>
                                         </div>
-                                        <div className="col-span-2 flex justify-end space-x-2">
+                                        <div className="hidden md:flex col-span-2 justify-end space-x-2">
                                             <Button variant="ghost" size="icon" onClick={() => openEditMessage(msg)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                                                 <Edit className="h-4 w-4" />
                                             </Button>
