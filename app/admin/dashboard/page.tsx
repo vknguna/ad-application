@@ -262,7 +262,11 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="divide-y">
-                            {ads.length === 0 ? (
+                            {loadingAds ? (
+                                <div className="p-12 text-center text-muted-foreground animate-pulse">
+                                    Loading ads...
+                                </div>
+                            ) : ads.length === 0 ? (
                                 <div className="p-12 text-center text-muted-foreground">
                                     No ads found. Create one to get started.
                                 </div>
@@ -351,7 +355,11 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="divide-y">
-                            {messages.length === 0 ? (
+                            {loadingMessages ? (
+                                <div className="p-12 text-center text-muted-foreground animate-pulse">
+                                    Loading messages...
+                                </div>
+                            ) : messages.length === 0 ? (
                                 <div className="p-12 text-center text-muted-foreground">
                                     No messages found. Create one to get started.
                                 </div>
