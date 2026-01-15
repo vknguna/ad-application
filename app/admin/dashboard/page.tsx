@@ -45,12 +45,12 @@ export default function AdminDashboard() {
     const router = useRouter();
 
     const fetchAds = async () => {
-        const res = await fetch('/api/ads');
+        const res = await fetch('/api/ads', { cache: 'no-store' });
         if (res.ok) setAds(await res.json());
     };
 
     const fetchMessages = async () => {
-        const res = await fetch('/api/messages');
+        const res = await fetch('/api/messages', { cache: 'no-store' });
         if (res.ok) setMessages(await res.json());
     };
 
