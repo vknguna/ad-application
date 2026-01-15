@@ -28,11 +28,6 @@ export function ThemeWatcher() {
         };
 
         fetchTheme();
-        // Sync every 5 seconds? Or just on load? 
-        // User requested "configurable from admin page"
-        // Ideally it should update relatively quickly on Display page.
-        const interval = setInterval(fetchTheme, 5000);
-        return () => clearInterval(interval);
     }, [setTheme]);
 
     return null;

@@ -4,23 +4,8 @@ import { useEffect, useState, useRef } from 'react';
 import { IAd } from '@/models/Ad';
 import { IMessage } from '@/models/Message';
 import MessageTicker from '@/components/MessageTicker';
-import { Maximize } from 'lucide-react';
-
-// Helper to convert Drive links to direct view links
-const getDirectUrl = (url: string) => {
-    try {
-        if (url.includes('drive.google.com')) {
-            const idMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-            if (idMatch && idMatch[1]) {
-                // 'download' export is often more reliable for direct media src than 'view'
-                return `https://drive.google.com/uc?export=download&id=${idMatch[1]}`;
-            }
-        }
-        return url;
-    } catch (e) {
-        return url;
-    }
-};
+import { AdDisplay } from '@/components/AdDisplay';
+import { Maximize, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function DisplayPage() {
     const [ads, setAds] = useState<IAd[]>([]);
@@ -28,7 +13,7 @@ export default function DisplayPage() {
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
     const [loading, setLoading] = useState(true);
     const [hasInteracted, setHasInteracted] = useState(false);
-    const videoRef = useRef<HTMLVideoElement>(null);
+    const [loadedAds, setLoadedAds] = useState<Set<string>>(new Set());
 
     // Fetch Data
     const fetchData = async () => {
@@ -59,25 +44,16 @@ export default function DisplayPage() {
         return () => clearInterval(interval);
     }, []);
 
-    // Ad Rotation Logic
-    useEffect(() => {
-        if (!hasInteracted || ads.length === 0) return;
+    const handleMediaLoaded = (id: string) => {
+        setLoadedAds((prev) => {
+            const newSet = new Set(prev);
+            newSet.add(id);
+            return newSet;
+        });
+    };
 
-        const currentAd = ads[currentAdIndex];
-        let timer: NodeJS.Timeout;
-
-        if (currentAd.type === 'image') {
-            timer = setTimeout(() => {
-                nextAd();
-            }, (currentAd.duration || 10) * 1000); // Default to 10s if missing
-        } else if (currentAd.type === 'video') {
-            if (videoRef.current) {
-                videoRef.current.play().catch(e => console.error("Autoplay failed", e));
-            }
-        }
-
-        return () => clearTimeout(timer);
-    }, [currentAdIndex, ads]);
+    const progress = ads.length > 0 ? Math.round((loadedAds.size / ads.length) * 100) : 0;
+    const isFullyLoaded = ads.length > 0 && loadedAds.size === ads.length;
 
     const nextAd = () => {
         setCurrentAdIndex((prev) => (prev + 1) % ads.length);
@@ -92,42 +68,47 @@ export default function DisplayPage() {
         nextAd();
     }
 
-    if (loading) {
-        return <div className="h-screen w-screen flex items-center justify-center bg-black text-white text-2xl animate-pulse">Loading Display...</div>;
-    }
+    // Ad Rotation Logic
+    useEffect(() => {
+        if (!hasInteracted || ads.length === 0) return;
 
-    const currentAd = ads[currentAdIndex];
+        const currentAd = ads[currentAdIndex];
+        let timer: NodeJS.Timeout;
+
+        if (currentAd && currentAd.type === 'image') {
+            timer = setTimeout(() => {
+                nextAd();
+            }, (currentAd.duration || 10) * 1000);
+        }
+        // Video rotation is handled by callbacks from AdDisplay
+
+        return () => clearTimeout(timer);
+    }, [currentAdIndex, ads, hasInteracted]);
+
+    const prevAd = () => {
+        setCurrentAdIndex((prev) => (prev - 1 + ads.length) % ads.length);
+    };
+
+    // ...
 
     return (
         <div className="h-dvh w-screen bg-black overflow-hidden flex flex-col relative font-sans">
             {/* MAIN CONTENT AREA */}
             <div className="flex-1 relative flex items-center justify-center bg-black overflow-hidden min-h-0">
-                {hasInteracted && ads.length > 0 && currentAd && (
-                    <>
-                        {currentAd.type === 'image' && (
-                            <img
-                                key={currentAd._id as unknown as string}
-                                src={getDirectUrl(currentAd.url)}
-                                alt={currentAd.title}
-                                className="w-full h-full object-contain animate-in fade-in duration-500"
-                                onError={handleError}
-                            />
-                        )}
-                        {currentAd.type === 'video' && (
-                            <video
-                                key={currentAd._id as unknown as string}
-                                ref={videoRef}
-                                src={getDirectUrl(currentAd.url)}
-                                className="w-full h-full object-contain animate-in fade-in duration-500"
-                                autoPlay
-                                playsInline
-                                muted={currentAd.muted ?? true}
-                                onEnded={handleVideoEnded}
-                                onError={handleError}
-                            />
-                        )}
-                    </>
-                )}
+                {/* Pre-mount ALL ads for seamless headers and caching */}
+                {ads.length > 0 && ads.map((ad, index) => {
+                    const isActive = index === currentAdIndex && hasInteracted;
+                    return (
+                        <AdDisplay
+                            key={ad._id as unknown as string}
+                            ad={ad}
+                            isActive={isActive}
+                            onLoaded={handleMediaLoaded}
+                            onVideoEnded={handleVideoEnded}
+                            onError={handleError}
+                        />
+                    );
+                })}
 
                 {/* Interaction / Start Overlay */}
                 {!hasInteracted && (
@@ -141,7 +122,20 @@ export default function DisplayPage() {
                             <div className="bg-white text-black px-12 py-6 rounded-full text-3xl font-bold hover:scale-105 transition-transform shadow-[0_0_30px_rgba(255,255,255,0.3)]">
                                 Click to Start Display
                             </div>
-                            <p className="text-white/50 mt-6 text-lg font-mono uppercase tracking-widest">System Ready</p>
+                            <div className="mt-8 flex flex-col items-center gap-2">
+                                <p className="text-white/50 text-lg font-mono uppercase tracking-widest">
+                                    {isFullyLoaded ? 'System Ready' : `Loading Media... ${progress}%`}
+                                </p>
+                                {/* Progress Bar */}
+                                {!isFullyLoaded && (
+                                    <div className="w-64 h-1 bg-white/20 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-blue-500 transition-all duration-300 ease-out"
+                                            style={{ width: `${progress}%` }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -154,14 +148,32 @@ export default function DisplayPage() {
             {/* MESSAGE TICKER */}
             <MessageTicker messages={messages} />
 
-            {/* FULLSCREEN TOGGLE BUTTON - Auto-hides */}
-            <ControlsOverlay />
+
+
+            {/* NAVIGATION CONTROLS & INDICATORS */}
+            {hasInteracted && (
+                <ControlsOverlay
+                    total={ads.length}
+                    current={currentAdIndex}
+                    onNext={nextAd}
+                    onPrev={prevAd}
+                    onDotClick={setCurrentAdIndex}
+                />
+            )}
         </div>
     );
 }
 
-function ControlsOverlay() {
-    const [isVisible, setIsVisible] = useState(true);
+interface ControlsOverlayProps {
+    total: number;
+    current: number;
+    onNext: () => void;
+    onPrev: () => void;
+    onDotClick: (index: number) => void;
+}
+
+function ControlsOverlay({ total, current, onNext, onPrev, onDotClick }: ControlsOverlayProps) {
+    const [isVisible, setIsVisible] = useState(false);
     const timerRef = useRef<NodeJS.Timeout>(null);
 
     const showControls = () => {
@@ -173,36 +185,85 @@ function ControlsOverlay() {
         if (timerRef.current) clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => {
             setIsVisible(false);
-        }, 5000);
+        }, 3000); // Hide after 3 seconds
+    };
+
+    const handleInteraction = () => {
+        showControls();
     };
 
     useEffect(() => {
-        resetTimer();
+        window.addEventListener('mousemove', handleInteraction);
+        window.addEventListener('click', handleInteraction);
+        window.addEventListener('touchstart', handleInteraction);
         return () => {
+            window.removeEventListener('mousemove', handleInteraction);
+            window.removeEventListener('click', handleInteraction);
+            window.removeEventListener('touchstart', handleInteraction);
             if (timerRef.current) clearTimeout(timerRef.current);
         };
     }, []);
 
     return (
         <div
-            className="absolute bottom-24 right-0 p-8 z-[60] flex justify-end items-end"
-            onMouseEnter={showControls}
-            onMouseMove={showControls}
-            onMouseLeave={resetTimer}
+            className={`absolute inset-0 pointer-events-none z-50 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
         >
-            <button
-                onClick={() => {
-                    if (!document.fullscreenElement) {
-                        document.documentElement.requestFullscreen();
-                    } else {
-                        document.exitFullscreen();
-                    }
-                }}
-                className={`bg-white/10 hover:bg-white/20 backdrop-blur-md p-3 rounded-full text-white/50 hover:text-white transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
-                title="Toggle Fullscreen"
-            >
-                <Maximize className="w-6 h-6" />
-            </button>
+            {/* Previous Button (Left) */}
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-auto">
+                <button
+                    onClick={(e) => { e.stopPropagation(); onPrev(); }}
+                    className="p-4 rounded-full bg-black/20 hover:bg-black/50 text-white/50 hover:text-white backdrop-blur-sm transition-all hover:scale-110"
+                >
+                    <ChevronLeft className="w-8 h-8" />
+                </button>
+            </div>
+
+            {/* Next Button (Right) */}
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-auto">
+                <button
+                    onClick={(e) => { e.stopPropagation(); onNext(); }}
+                    className="p-4 rounded-full bg-black/20 hover:bg-black/50 text-white/50 hover:text-white backdrop-blur-sm transition-all hover:scale-110"
+                >
+                    <ChevronRight className="w-8 h-8" />
+                </button>
+            </div>
+
+            {/* Bottom Controls (Dots + Fullscreen) */}
+            <div className="absolute bottom-24 left-0 right-0 flex items-end justify-center pointer-events-auto px-8">
+
+                {/* Pagination Dots */}
+                {total > 1 && (
+                    <div className="flex gap-2 bg-black/20 backdrop-blur-md px-4 py-2 rounded-full mb-1">
+                        {Array.from({ length: total }).map((_, i) => (
+                            <button
+                                key={i}
+                                onClick={(e) => { e.stopPropagation(); onDotClick(i); }}
+                                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === current
+                                    ? 'bg-white scale-125'
+                                    : 'bg-white/30 hover:bg-white/60'
+                                    }`}
+                                aria-label={`Go to slide ${i + 1}`}
+                            />
+                        ))}
+                    </div>
+                )}
+
+                {/* Fullscreen Toggle (Absolute Right) */}
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (!document.fullscreenElement) {
+                            document.documentElement.requestFullscreen();
+                        } else {
+                            document.exitFullscreen();
+                        }
+                    }}
+                    className="absolute right-8 bottom-0 bg-white/10 hover:bg-white/20 backdrop-blur-md p-3 rounded-full text-white/50 hover:text-white transition-opacity duration-500"
+                    title="Toggle Fullscreen"
+                >
+                    <Maximize className="w-6 h-6" />
+                </button>
+            </div>
         </div>
     );
 }
