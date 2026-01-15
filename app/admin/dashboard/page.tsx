@@ -31,6 +31,8 @@ import { toast } from "sonner";
 export default function AdminDashboard() {
     const [ads, setAds] = useState<IAd[]>([]);
     const [messages, setMessages] = useState<IMessage[]>([]);
+    const [loadingAds, setLoadingAds] = useState(true);
+    const [loadingMessages, setLoadingMessages] = useState(true);
 
     // Ad State
     const [editingAd, setEditingAd] = useState<IAd | null>(null);
@@ -45,19 +47,33 @@ export default function AdminDashboard() {
     const router = useRouter();
 
     const fetchAds = async () => {
-        const res = await fetch('/api/ads', { cache: 'no-store' });
-        if (res.ok) setAds(await res.json());
+        setLoadingAds(true);
+        try {
+            const res = await fetch('/api/ads', { cache: 'no-store' });
+            if (res.ok) setAds(await res.json());
+        } finally {
+            setLoadingAds(false);
+        }
     };
 
     const fetchMessages = async () => {
-        const res = await fetch('/api/messages', { cache: 'no-store' });
-        if (res.ok) setMessages(await res.json());
+        setLoadingMessages(true);
+        try {
+            const res = await fetch('/api/messages', { cache: 'no-store' });
+            if (res.ok) setMessages(await res.json());
+        } finally {
+            setLoadingMessages(false);
+        }
     };
 
     useEffect(() => {
         fetchAds();
         fetchMessages();
     }, []);
+
+    // ... (rest of code) ...
+
+
 
     // --- AD HANDLERS ---
     const handleCreateAd = async (data: Partial<IAd>) => {
