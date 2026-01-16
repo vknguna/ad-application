@@ -10,7 +10,7 @@ export interface ISettings extends Document {
 }
 
 const SettingsSchema: Schema = new Schema({
-    siteTitle: { type: String, default: 'My Digital Signage' },
+    siteTitle: { type: String, default: 'Digital Signage System' },
     refreshInterval: { type: Number, default: 60 },
     theme: { type: String, enum: ['light', 'dark', 'system'], default: 'dark' },
     flashMode: { type: String, enum: ['card', 'screen'], default: 'card' },

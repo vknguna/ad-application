@@ -13,7 +13,7 @@ export default function LandingContent() {
                     System v1.0
                 </div>
                 <h1 className="text-7xl md:text-9xl font-bold tracking-tighter text-black dark:text-white">
-                    InfoBoard
+                    Digital Signage
                 </h1>
                 <p className="text-sm md:text-base text-neutral-500 font-mono uppercase tracking-[0.2em]">
                     Autonomous Digital Signage Interface

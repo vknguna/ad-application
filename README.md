@@ -1,14 +1,14 @@
-# Simple Reminder Display
+# Digital Signage System
 
-A full-screen reminder display system for outlet monitors, built with Next.js and MongoDB.
+A dynamic digital signage solution built with Next.js and MongoDB for managing and displaying advertisements and ticker messages on public screens.
 
-## Usage Scenarios
+## Key Features
 
-This application is purpose-built for high-visibility environments like **Retail Shops**, **Commercial Kitchens**, or **Service Centers**. It provides a "Set and Forget" solution for operational hygiene:
-
--   **Shop Floor Display**: Mount a monitor running the `/display` page in full-screen. It acts as an automated supervisor, reminding staff of opening/closing checks, cleaning schedules, or inventory audits.
--   **Remote Management**: Store managers can log in to the `/admin` dashboard from their phone or laptop to update tasks instantly without touching the display screen.
--   **Attention Grabbing**: Uses visual flashing and optional audio alarms to ensure tasks aren't ignored during busy hours.
+-   **Multimedia Ad Rotation**: seamlessly loop through images and videos with configurable durations.
+-   **Live Ticker Messages**: Display scrolling announcements and updates at the bottom of the screen.
+-   **Remote Management**: A secure `/admin` dashboard allows easy uploading, editing, and reordering of content from any device.
+-   **Real-time Updates**: Changes made in the admin panel are reflected on the display immediately without refreshing.
+-   **Dark/Light Mode**: Fully themeable interface inspired by modern design principles.
 
 ## Getting Started
 

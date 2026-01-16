@@ -7,8 +7,8 @@ import { Toaster } from "@/components/ui/sonner"
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Simple Reminder',
-  description: 'Shop floor reminder display',
+  title: 'Digital Signage Manager',
+  description: 'Autonomous display management system',
 };
 
 export default function RootLayout({
