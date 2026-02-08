@@ -14,6 +14,7 @@ export default function DisplayPage() {
     const [loading, setLoading] = useState(true);
     const [hasInteracted, setHasInteracted] = useState(false);
     const [loadedAds, setLoadedAds] = useState<Set<string>>(new Set());
+    const [failedAds, setFailedAds] = useState<Set<string>>(new Set());
 
     // Fetch Data
     const fetchData = async () => {
@@ -52,8 +53,9 @@ export default function DisplayPage() {
         });
     };
 
-    const progress = ads.length > 0 ? Math.round((loadedAds.size / ads.length) * 100) : 0;
-    const isFullyLoaded = ads.length > 0 && loadedAds.size === ads.length;
+    const totalResolved = loadedAds.size + failedAds.size;
+    const progress = ads.length > 0 ? Math.round((totalResolved / ads.length) * 100) : 0;
+    const isFullyLoaded = ads.length > 0 && totalResolved === ads.length;
 
     const nextAd = () => {
         setCurrentAdIndex((prev) => (prev + 1) % ads.length);
@@ -63,9 +65,18 @@ export default function DisplayPage() {
         nextAd();
     };
 
-    const handleError = () => {
-        console.error("Media failed to load, skipping...");
-        nextAd();
+    const handleError = (id: string, url: string) => {
+        console.error(`Media failed to load (${id}): ${url}`);
+        setFailedAds((prev) => {
+            const newSet = new Set(prev);
+            newSet.add(id);
+            return newSet;
+        });
+
+        // If the failed ad is the current one, skip it
+        if (ads[currentAdIndex]?._id === (id as any)) {
+            nextAd();
+        }
     }
 
     // Ad Rotation Logic
@@ -89,7 +100,18 @@ export default function DisplayPage() {
         setCurrentAdIndex((prev) => (prev - 1 + ads.length) % ads.length);
     };
 
-    // ...
+    // Auto-start when fully loaded
+    useEffect(() => {
+        const noAds = !loading && ads.length === 0;
+        if ((isFullyLoaded || noAds) && !hasInteracted) {
+            const timer = setTimeout(() => {
+                setHasInteracted(true);
+            }, 5000); // 5 second delay for smooth transition
+            return () => clearTimeout(timer);
+        }
+    }, [isFullyLoaded, hasInteracted, loading, ads.length]);
+
+    // ... (rest of the component)
 
     return (
         <div className="h-dvh w-screen bg-black overflow-hidden flex flex-col relative font-sans">
@@ -105,36 +127,31 @@ export default function DisplayPage() {
                             isActive={isActive}
                             onLoaded={handleMediaLoaded}
                             onVideoEnded={handleVideoEnded}
-                            onError={handleError}
+                            onError={() => handleError(ad._id as unknown as string, ad.url)}
                         />
                     );
                 })}
 
-                {/* Interaction / Start Overlay */}
+                {/* Loading / Initializing Overlay */}
                 {!hasInteracted && (
                     <div
-                        className="absolute inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center cursor-pointer"
-                        onClick={() => {
-                            setHasInteracted(true);
-                        }}
+                        className="absolute inset-0 z-[100] bg-black flex flex-col items-center justify-center"
                     >
-                        <div className="flex flex-col items-center animate-pulse">
-                            <div className="bg-white text-black px-12 py-6 rounded-full text-3xl font-bold hover:scale-105 transition-transform shadow-[0_0_30px_rgba(255,255,255,0.3)]">
-                                Click to Start Display
+                        <div className="flex flex-col items-center">
+                            <div className="text-white/20 text-4xl font-black uppercase tracking-[0.2em] animate-pulse mb-12">
+                                Initializing
                             </div>
-                            <div className="mt-8 flex flex-col items-center gap-2">
-                                <p className="text-white/50 text-lg font-mono uppercase tracking-widest">
-                                    {isFullyLoaded ? 'System Ready' : `Loading Media... ${progress}%`}
+                            <div className="flex flex-col items-center gap-4">
+                                <p className="text-white/50 text-sm font-mono uppercase tracking-widest">
+                                    {isFullyLoaded ? 'Starting soon...' : `Loading Media... ${progress}%`}
                                 </p>
                                 {/* Progress Bar */}
-                                {!isFullyLoaded && (
-                                    <div className="w-64 h-1 bg-white/20 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-blue-500 transition-all duration-300 ease-out"
-                                            style={{ width: `${progress}%` }}
-                                        />
-                                    </div>
-                                )}
+                                <div className="w-64 h-1 bg-white/10 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-blue-600 transition-all duration-500 ease-out"
+                                        style={{ width: isFullyLoaded ? '100%' : `${progress}%` }}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
